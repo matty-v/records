@@ -1,0 +1,229 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-primary: #0a0e14;
+    --bg-secondary: #121821;
+    --accent-cyan: #00d4ff;
+    --accent-purple: #a78bfa;
+    --accent-pink: #ec4899;
+    --grid-color: rgba(100, 150, 255, 0.08);
+    --particle-color: rgba(167, 139, 250, 0.4);
+
+    --background: 220 50% 4%;
+    --foreground: 210 40% 98%;
+    --card: 220 40% 7%;
+    --card-foreground: 210 40% 98%;
+    --primary: 190 100% 50%;
+    --primary-foreground: 220 50% 4%;
+    --secondary: 220 30% 14%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 220 30% 14%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 263 70% 76%;
+    --accent-foreground: 220 50% 4%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 220 30% 18%;
+    --input: 220 30% 18%;
+    --ring: 190 100% 50%;
+    --radius: 0.75rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'JetBrains Mono', monospace;
+    overflow-x: hidden;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+}
+
+*:hover {
+  scrollbar-color: rgba(0, 212, 255, 0.3) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 212, 255, 0.2);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 212, 255, 0.4);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.gradient-backdrop {
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at 20% 50%,
+    rgba(0, 212, 255, 0.08) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at 80% 50%,
+    rgba(167, 139, 250, 0.06) 0%,
+    transparent 50%
+  ),
+  radial-gradient(
+    circle at 50% 50%,
+    rgba(236, 72, 153, 0.04) 0%,
+    transparent 50%
+  );
+  animation: gradientShift 20s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+@keyframes gradientShift {
+  0%, 100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  33% {
+    transform: translate(5%, -5%) rotate(120deg);
+  }
+  66% {
+    transform: translate(-5%, 5%) rotate(240deg);
+  }
+}
+
+.grid-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image:
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 60px 60px;
+  background-position: 0 0, 0 0;
+  animation: gridMove 40s linear infinite;
+  z-index: 0;
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+@keyframes gridMove {
+  0% {
+    background-position: 0 0, 0 0;
+  }
+  100% {
+    background-position: 60px 60px, 60px 60px;
+  }
+}
+
+.tech-card {
+  background: rgba(18, 24, 33, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(100, 150, 255, 0.2);
+  box-shadow:
+    0 0 40px rgba(0, 212, 255, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  transition: all 0.3s ease;
+}
+
+.tech-card:hover {
+  border-color: rgba(167, 139, 250, 0.4);
+  box-shadow:
+    0 0 60px rgba(167, 139, 250, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.glow-cyan {
+  color: var(--accent-cyan);
+  text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+}
+
+.glow-purple {
+  color: var(--accent-purple);
+  text-shadow: 0 0 30px rgba(167, 139, 250, 0.3);
+}
+
+.tech-badge {
+  background: rgba(0, 212, 255, 0.1);
+  border: 1px solid rgba(0, 212, 255, 0.2);
+  color: var(--accent-cyan);
+}
+
+.tech-input {
+  background: rgba(18, 24, 33, 0.5);
+  border: 1px solid rgba(100, 150, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.tech-input:focus {
+  border-color: var(--accent-cyan);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+  outline: none;
+}
+
+.tech-button-primary {
+  background: var(--accent-cyan);
+  color: #0a0e14;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tech-button-primary:hover {
+  background: rgba(0, 212, 255, 0.8);
+  box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+}
+
+.tech-button-secondary {
+  background: transparent;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  color: var(--accent-purple);
+  transition: all 0.3s ease;
+}
+
+.tech-button-secondary:hover {
+  border-color: var(--accent-purple);
+  background: rgba(167, 139, 250, 0.1);
+}
+
+.tech-button-ghost {
+  background: transparent;
+  color: hsl(var(--muted-foreground));
+  transition: all 0.3s ease;
+}
+
+.tech-button-ghost:hover {
+  color: var(--accent-cyan);
+  background: rgba(0, 212, 255, 0.1);
+}
