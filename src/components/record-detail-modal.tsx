@@ -72,22 +72,28 @@ export function RecordDetailModal({
               <Label className="text-muted-foreground text-xs">{col.columnName}</Label>
               {isEditing ? (
                 col.columnType === 'boolean' ? (
-                  <label className="flex items-center gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={values[col.columnName] === 'true'}
-                      onChange={(e) =>
-                        setValues((prev) => ({
-                          ...prev,
-                          [col.columnName]: e.target.checked ? 'true' : 'false',
-                        }))
-                      }
-                      className="h-4 w-4 rounded border-[rgba(100,150,255,0.2)] bg-[rgba(18,24,33,0.5)] accent-[var(--accent-cyan)]"
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={values[col.columnName] === 'true'}
+                    onClick={() =>
+                      setValues((prev) => ({
+                        ...prev,
+                        [col.columnName]: prev[col.columnName] === 'true' ? 'false' : 'true',
+                      }))
+                    }
+                    className={`relative inline-flex h-10 w-20 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-cyan)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] ${
+                      values[col.columnName] === 'true'
+                        ? 'border-[var(--accent-cyan)] bg-[var(--accent-cyan)]'
+                        : 'border-[rgba(100,150,255,0.3)] bg-[rgba(18,24,33,0.5)]'
+                    }`}
+                  >
+                    <span
+                      className={`pointer-events-none block h-7 w-7 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                        values[col.columnName] === 'true' ? 'translate-x-10' : 'translate-x-1'
+                      }`}
                     />
-                    <span className="text-sm text-foreground">
-                      {values[col.columnName] === 'true' ? 'Yes' : 'No'}
-                    </span>
-                  </label>
+                  </button>
                 ) : (
                   <Input
                     type={col.columnType === 'number' ? 'number' : col.columnType === 'date' ? 'date' : 'text'}

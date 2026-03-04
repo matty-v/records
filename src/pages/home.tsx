@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus, Settings, Columns3 } from 'lucide-react'
+import { Plus, Settings, Columns3, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SourceSelector } from '@/components/source-selector'
 import { SheetTabs } from '@/components/sheet-tabs'
@@ -18,7 +18,8 @@ import { useSettings } from '@/hooks/use-settings'
 import { useBlockingOverlay } from '@/components/blocking-overlay'
 import { toast } from '@/hooks/use-toast'
 import { getSheetsClient } from '@/lib/records-api'
-import { refreshSchemaFromRemote } from '@/lib/cache'
+import { refreshSchemaFromRemote, refreshRecordsFromRemote } from '@/lib/cache'
+import { db } from '@/lib/db'
 import { serializeConfigRow } from '@/lib/schema-utils'
 import { CONFIG_SHEET_NAME } from '@/config/constants'
 import type { RecordRow, ColumnType } from '@/lib/types'
@@ -41,6 +42,39 @@ export function HomePage() {
     updateRecord,
     deleteRecord,
   } = useRecords(activeSource?.id ?? null, activeSource?.spreadsheetId ?? null, activeSheet, currentSchema ?? null)
+
+  const [isRefreshing, setIsRefreshing] = useState(false)
+
+  const handleRefresh = useCallback(async () => {
+    if (!activeSource) return
+    setIsRefreshing(true)
+    try {
+      // Wipe local IndexedDB cache
+      await db.records.filter((r) => r.sourceId === activeSource.id).delete()
+      await db.schemas.filter((s) => s.localId.startsWith(`${activeSource.id}:`)).delete()
+
+      // Pull fresh data from remote
+      await refreshSchemaFromRemote(activeSource.id, activeSource.spreadsheetId)
+
+      if (activeSheet) {
+        await refreshRecordsFromRemote(activeSource.id, activeSource.spreadsheetId, activeSheet)
+      }
+
+      // Invalidate all React Query caches
+      queryClient.invalidateQueries({ queryKey: ['schema'] })
+      queryClient.invalidateQueries({ queryKey: ['records'] })
+
+      toast({ title: 'Data refreshed' })
+    } catch (error) {
+      toast({
+        title: 'Refresh failed',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [activeSource, activeSheet, queryClient])
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<RecordRow | null>(null)
@@ -191,6 +225,9 @@ export function HomePage() {
           onSourceChange={setActiveSourceId}
         />
         <div className="flex gap-1">
+          <Button variant="ghost" size="icon" onClick={handleRefresh} disabled={isRefreshing || !activeSource}>
+            <RefreshCw className={`h-5 w-5 ${isRefreshing ? 'animate-spin' : ''}`} />
+          </Button>
           {currentSchema && (
             <Button variant="ghost" size="icon" onClick={() => setShowManageColumns(true)}>
               <Columns3 className="h-5 w-5" />
