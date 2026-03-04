@@ -8,6 +8,14 @@ import { RecordTable } from '@/components/record-table'
 import { RecordFormModal } from '@/components/record-form-modal'
 import { RecordDetailModal } from '@/components/record-detail-modal'
 import { AddSheetDialog } from '@/components/add-sheet-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { ManageColumnsDialog } from '@/components/manage-columns-dialog'
 import { SettingsDialog } from '@/components/settings-dialog'
 import { useSources } from '@/hooks/use-sources'
@@ -83,6 +91,7 @@ export function HomePage() {
   const [showSettings, setShowSettings] = useState(false)
   const [isCreatingSheet, setIsCreatingSheet] = useState(false)
   const [isSavingColumns, setIsSavingColumns] = useState(false)
+  const [sheetToDelete, setSheetToDelete] = useState<string | null>(null)
 
   const handleCreateRecord = useCallback(async (data: Record<string, string>) => {
     await withOverlay(async () => {
@@ -215,6 +224,51 @@ export function HomePage() {
     }
   }, [activeSource, withOverlay, queryClient])
 
+  const handleDeleteSheet = useCallback(async (sheetName: string) => {
+    if (!activeSource) return
+    setSheetToDelete(null)
+    try {
+      await withOverlay(async () => {
+        const client = getSheetsClient(activeSource.spreadsheetId)
+
+        // Delete _config rows for this sheet (reverse order to preserve indices)
+        const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+        const sheetConfigRows = configRows
+          .map((row, idx) => ({ row, rowIndex: idx + 2 }))
+          .filter(({ row }) => row.sheetName === sheetName)
+
+        for (const { rowIndex } of [...sheetConfigRows].reverse()) {
+          await client.deleteRow(CONFIG_SHEET_NAME, rowIndex)
+        }
+
+        // Delete the actual sheet
+        await client.deleteSheet(sheetName)
+
+        // Clear local caches for this sheet
+        await db.records.filter((r) => r.sourceId === activeSource.id && r.sheetName === sheetName).delete()
+        await db.schemas.where('localId').equals(`${activeSource.id}:${sheetName}`).delete()
+
+        // Invalidate React Query caches
+        queryClient.invalidateQueries({ queryKey: ['schema'] })
+        queryClient.invalidateQueries({ queryKey: ['records'] })
+
+        // Switch to first remaining sheet
+        const remaining = sheetNames.filter((n) => n !== sheetName)
+        if (remaining.length > 0) {
+          setActiveSheet(remaining[0])
+        }
+
+        toast({ title: `Sheet "${sheetName}" deleted` })
+      }, 'Deleting sheet...')
+    } catch (error) {
+      toast({
+        title: 'Failed to delete sheet',
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: 'destructive',
+      })
+    }
+  }, [activeSource, withOverlay, queryClient, sheetNames, setActiveSheet])
+
   return (
     <div className="min-h-screen p-4 max-w-2xl mx-auto">
       {/* Header */}
@@ -245,6 +299,7 @@ export function HomePage() {
           sheetNames={sheetNames}
           activeSheet={activeSheet}
           onSheetChange={setActiveSheet}
+          onDeleteSheet={setSheetToDelete}
         />
         <Button variant="ghost" size="sm" onClick={() => setShowAddSheet(true)}>
           <Plus className="h-4 w-4" />
@@ -325,6 +380,28 @@ export function HomePage() {
         onInitializeSheets={initializeSheets}
         isInitializing={isInitializing}
       />
+
+      <Dialog open={!!sheetToDelete} onOpenChange={(open) => { if (!open) setSheetToDelete(null) }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete sheet "{sheetToDelete}"?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete the sheet and all its data. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSheetToDelete(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => sheetToDelete && handleDeleteSheet(sheetToDelete)}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

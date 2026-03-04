@@ -100,12 +100,19 @@ export class SheetsDbClient {
     })
   }
 
+  async deleteSheet(sheetName: string): Promise<void> {
+    await this.request(`/sheets/${encodeURIComponent(sheetName)}`, {
+      method: 'DELETE',
+    })
+  }
+
   sheet(sheetName: string) {
     return {
       getRows: <T>() => this.getRows<T>(sheetName),
       createRow: <T>(data: T) => this.createRow(sheetName, data),
       updateRow: <T>(rowIndex: number, data: T) => this.updateRow(sheetName, rowIndex, data),
       deleteRow: (rowIndex: number) => this.deleteRow(sheetName, rowIndex),
+      delete: () => this.deleteSheet(sheetName),
     }
   }
 }
