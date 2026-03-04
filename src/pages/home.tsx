@@ -246,7 +246,7 @@ export function HomePage() {
 
         // Clear local caches for this sheet
         await db.records.filter((r) => r.sourceId === activeSource.id && r.sheetName === sheetName).delete()
-        await db.schemas.where('localId').equals(`${activeSource.id}:${sheetName}`).delete()
+        await db.schemas.filter((s) => s.localId.startsWith(`${activeSource.id}:${sheetName}:`)).delete()
 
         // Invalidate React Query caches
         queryClient.invalidateQueries({ queryKey: ['schema'] })
