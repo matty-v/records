@@ -93,6 +93,16 @@ export function HomePage() {
         const { rowIndex } = await client.createRow(sheetName, placeholder)
         await client.deleteRow(sheetName, rowIndex)
 
+        // Ensure _config sheet has the autoPopulate header column
+        if (columns.some((c) => c.autoPopulate)) {
+          const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+          if (configRows.length === 0 || !('autoPopulate' in configRows[0])) {
+            const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', autoPopulate: '' }
+            const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
+            await client.deleteRow(CONFIG_SHEET_NAME, phIdx)
+          }
+        }
+
         // Write column definitions to _config
         for (let i = 0; i < columns.length; i++) {
           const configRow = serializeConfigRow({

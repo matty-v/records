@@ -27,9 +27,18 @@ export function useSettings() {
       if (!existingNames.includes(CONFIG_SHEET_NAME)) {
         await client.createSheet(CONFIG_SHEET_NAME)
         // Create a placeholder row to establish columns, then delete it
-        const configColumns = { sheetName: '', columnName: '', columnType: '', columnOrder: '' }
+        const configColumns = { sheetName: '', columnName: '', columnType: '', columnOrder: '', autoPopulate: '' }
         const { rowIndex } = await client.createRow(CONFIG_SHEET_NAME, configColumns)
         await client.deleteRow(CONFIG_SHEET_NAME, rowIndex)
+      } else {
+        // Migrate: ensure _config has the autoPopulate column header
+        const rows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+        if (rows.length > 0 && !('autoPopulate' in rows[0])) {
+          // Add a placeholder row with the new column, then delete it
+          const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', autoPopulate: '' }
+          const { rowIndex } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
+          await client.deleteRow(CONFIG_SHEET_NAME, rowIndex)
+        }
       }
 
       queryClient.invalidateQueries({ queryKey: ['schema'] })
