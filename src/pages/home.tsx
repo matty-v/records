@@ -18,6 +18,7 @@ import { useSettings } from '@/hooks/use-settings'
 import { useBlockingOverlay } from '@/components/blocking-overlay'
 import { toast } from '@/hooks/use-toast'
 import { getSheetsClient } from '@/lib/records-api'
+import { refreshSchemaFromRemote } from '@/lib/cache'
 import { serializeConfigRow } from '@/lib/schema-utils'
 import { CONFIG_SHEET_NAME } from '@/config/constants'
 import type { RecordRow, ColumnType } from '@/lib/types'
@@ -104,6 +105,8 @@ export function HomePage() {
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }
 
+        // Refresh schema from remote so IndexedDB cache includes autoPopulate
+        await refreshSchemaFromRemote(activeSource.id, activeSource.spreadsheetId)
         queryClient.invalidateQueries({ queryKey: ['schema'] })
         setShowAddSheet(false)
         setActiveSheet(sheetName)
@@ -152,6 +155,7 @@ export function HomePage() {
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }
 
+        await refreshSchemaFromRemote(activeSource.id, activeSource.spreadsheetId)
         queryClient.invalidateQueries({ queryKey: ['schema'] })
         setShowManageColumns(false)
         toast({ title: 'Columns updated' })
