@@ -65,15 +65,15 @@ export function RecordFormModal({
                       [col.columnName]: prev[col.columnName] === 'true' ? 'false' : 'true',
                     }))
                   }
-                  className={`relative inline-flex h-10 w-20 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-cyan)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] ${
+                  className={`relative flex h-8 w-14 shrink-0 cursor-pointer items-center rounded-full border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-cyan)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--bg-primary)] ${
                     values[col.columnName] === 'true'
                       ? 'border-[var(--accent-cyan)] bg-[var(--accent-cyan)]'
                       : 'border-[rgba(100,150,255,0.3)] bg-[rgba(18,24,33,0.5)]'
                   }`}
                 >
                   <span
-                    className={`pointer-events-none block h-7 w-7 rounded-full bg-white shadow-lg ring-0 transition-transform ${
-                      values[col.columnName] === 'true' ? 'translate-x-10' : 'translate-x-1'
+                    className={`pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform ${
+                      values[col.columnName] === 'true' ? 'translate-x-7' : 'translate-x-1'
                     }`}
                   />
                 </button>
