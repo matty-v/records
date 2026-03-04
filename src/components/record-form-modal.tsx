@@ -48,7 +48,7 @@ export function RecordFormModal({
           </DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          {schema.columns.map((col) => (
+          {schema.columns.filter((col) => !col.autoPopulate).map((col) => (
             <div key={col.columnName} className="space-y-2">
               <Label htmlFor={col.columnName} className="text-muted-foreground">
                 {col.columnName}

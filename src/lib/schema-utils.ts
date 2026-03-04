@@ -8,6 +8,7 @@ export function parseConfigRows(rows: Record<string, string>[]): ColumnDefinitio
       columnName: row.columnName,
       columnType: (row.columnType || 'text') as ColumnType,
       columnOrder: parseInt(row.columnOrder || '0', 10),
+      ...(row.autoPopulate === 'currentDate' ? { autoPopulate: 'currentDate' as const } : {}),
     }))
 }
 
@@ -31,5 +32,6 @@ export function serializeConfigRow(col: ColumnDefinition): Record<string, string
     columnName: col.columnName,
     columnType: col.columnType,
     columnOrder: String(col.columnOrder),
+    ...(col.autoPopulate ? { autoPopulate: col.autoPopulate } : {}),
   }
 }

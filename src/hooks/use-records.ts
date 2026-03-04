@@ -3,12 +3,13 @@ import { v4 as uuidv4 } from 'uuid'
 import { db } from '@/lib/db'
 import { refreshRecordsFromRemote } from '@/lib/cache'
 import { syncCreateToRemote, syncUpdateToRemote, syncDeleteToRemote } from '@/lib/sync-remote'
-import type { RecordRow } from '@/lib/types'
+import type { RecordRow, SheetSchema } from '@/lib/types'
 
 export function useRecords(
   sourceId: string | null,
   spreadsheetId: string | null,
-  sheetName: string | null
+  sheetName: string | null,
+  schema: SheetSchema | null
 ) {
   const queryClient = useQueryClient()
 
@@ -50,11 +51,21 @@ export function useRecords(
     mutationFn: async (data: Record<string, string>) => {
       if (!sourceId || !spreadsheetId || !sheetName) throw new Error('No active source/sheet')
 
+      // Auto-populate fields
+      const autoData = { ...data }
+      if (schema) {
+        for (const col of schema.columns) {
+          if (col.autoPopulate === 'currentDate' && !autoData[col.columnName]) {
+            autoData[col.columnName] = new Date().toISOString().split('T')[0]
+          }
+        }
+      }
+
       const record: RecordRow = {
         id: uuidv4(),
         sourceId,
         sheetName,
-        ...data,
+        ...autoData,
       }
 
       // Write to IndexedDB + remote

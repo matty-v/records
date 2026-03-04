@@ -5,6 +5,7 @@ export interface ColumnDefinition {
   columnName: string
   columnType: ColumnType
   columnOrder: number
+  autoPopulate?: 'currentDate'
 }
 
 export interface SheetSchema {

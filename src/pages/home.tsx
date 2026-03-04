@@ -39,7 +39,7 @@ export function HomePage() {
     createRecord,
     updateRecord,
     deleteRecord,
-  } = useRecords(activeSource?.id ?? null, activeSource?.spreadsheetId ?? null, activeSheet)
+  } = useRecords(activeSource?.id ?? null, activeSource?.spreadsheetId ?? null, activeSheet, currentSchema ?? null)
 
   const [showAddForm, setShowAddForm] = useState(false)
   const [selectedRecord, setSelectedRecord] = useState<RecordRow | null>(null)
@@ -75,7 +75,7 @@ export function HomePage() {
 
   const handleCreateSheet = useCallback(async (
     sheetName: string,
-    columns: { name: string; type: ColumnType }[]
+    columns: { name: string; type: ColumnType; autoPopulate?: 'currentDate' }[]
   ) => {
     if (!activeSource) return
     setIsCreatingSheet(true)
@@ -99,6 +99,7 @@ export function HomePage() {
             columnName: columns[i].name,
             columnType: columns[i].type,
             columnOrder: i + 1,
+            ...(columns[i].autoPopulate ? { autoPopulate: columns[i].autoPopulate } : {}),
           })
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }

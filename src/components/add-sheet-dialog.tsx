@@ -20,9 +20,10 @@ import { Plus, Trash2 } from 'lucide-react'
 import { COLUMN_TYPES } from '@/config/constants'
 import type { ColumnType } from '@/lib/types'
 
-interface ColumnDraft {
+export interface ColumnDraft {
   name: string
   type: ColumnType
+  autoPopulate?: 'currentDate'
 }
 
 interface AddSheetDialogProps {
@@ -35,6 +36,7 @@ interface AddSheetDialogProps {
 export function AddSheetDialog({ open, onOpenChange, onSubmit, isSubmitting }: AddSheetDialogProps) {
   const [sheetName, setSheetName] = useState('')
   const [columns, setColumns] = useState<ColumnDraft[]>([{ name: '', type: 'text' }])
+  const [addAutoDate, setAddAutoDate] = useState(true)
 
   const addColumn = () => {
     setColumns((prev) => [...prev, { name: '', type: 'text' }])
@@ -54,15 +56,20 @@ export function AddSheetDialog({ open, onOpenChange, onSubmit, isSubmitting }: A
     e.preventDefault()
     const validColumns = columns.filter((c) => c.name.trim())
     if (!sheetName.trim() || validColumns.length === 0) return
-    onSubmit(sheetName.trim(), validColumns)
+    const allColumns: ColumnDraft[] = addAutoDate
+      ? [{ name: 'created at', type: 'date', autoPopulate: 'currentDate' }, ...validColumns]
+      : validColumns
+    onSubmit(sheetName.trim(), allColumns)
     setSheetName('')
     setColumns([{ name: '', type: 'text' }])
+    setAddAutoDate(true)
   }
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setSheetName('')
       setColumns([{ name: '', type: 'text' }])
+      setAddAutoDate(true)
     }
     onOpenChange(isOpen)
   }
@@ -83,6 +90,18 @@ export function AddSheetDialog({ open, onOpenChange, onSubmit, isSubmitting }: A
               placeholder="e.g. expenses"
             />
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={addAutoDate}
+              onChange={(e) => setAddAutoDate(e.target.checked)}
+              className="h-4 w-4 rounded border-[rgba(100,150,255,0.2)] bg-[rgba(18,24,33,0.5)] accent-[var(--accent-cyan)]"
+            />
+            <span className="text-sm text-muted-foreground">
+              Add "created at" date column (auto-populated)
+            </span>
+          </label>
 
           <div className="space-y-2">
             <Label>Columns</Label>
