@@ -9,7 +9,21 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { RecordRow, SheetSchema } from '@/lib/types'
+import type { ColumnDefinition, RecordRow, SheetSchema } from '@/lib/types'
+
+function formatDisplayValue(value: string | undefined, col: ColumnDefinition): string {
+  if (!value) return '—'
+  if (col.columnType === 'boolean') {
+    return value.toLowerCase() === 'true' ? 'Yes' : 'No'
+  }
+  if (col.columnType === 'date') {
+    const d = new Date(value + 'T00:00:00')
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    }
+  }
+  return value
+}
 
 interface RecordDetailModalProps {
   open: boolean
@@ -106,9 +120,7 @@ export function RecordDetailModal({
                 )
               ) : (
                 <p className="text-sm text-foreground">
-                  {col.columnType === 'boolean'
-                    ? record[col.columnName] === 'true' ? 'Yes' : 'No'
-                    : record[col.columnName] || '—'}
+                  {formatDisplayValue(record[col.columnName], col)}
                 </p>
               )}
             </div>

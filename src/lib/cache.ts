@@ -5,6 +5,27 @@ import { parseConfigRows } from './schema-utils'
 import { CONFIG_SHEET_NAME } from '@/config/constants'
 import type { ColumnDefinition, RecordRow } from './types'
 
+/** Normalize a raw remote value based on column type. */
+function normalizeValue(value: string, columnType: string): string {
+  if (!value) return value
+
+  if (columnType === 'boolean') {
+    // Google Sheets returns TRUE/FALSE
+    return value.toLowerCase() === 'true' ? 'true' : 'false'
+  }
+
+  if (columnType === 'date') {
+    // Google Sheets may return ISO strings like "2026-03-03T00:00:00.000Z"
+    // Convert to local YYYY-MM-DD
+    const d = new Date(value)
+    if (!isNaN(d.getTime()) && value.includes('T')) {
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    }
+  }
+
+  return value
+}
+
 export async function refreshRecordsFromRemote(
   sourceId: string,
   spreadsheetId: string,
@@ -31,13 +52,24 @@ export async function refreshRecordsFromRemote(
         .delete()
     })
 
+  // Load schema to normalize values by type
+  const schemaRows = await db.schemas
+    .filter((s) => s.localId.startsWith(`${sourceId}:${sheetName}:`))
+    .toArray()
+  const colTypeMap = new Map(schemaRows.map((s) => [s.columnName, s.columnType]))
+
   for (const remote of remoteRows) {
     if (!remote.id) continue
+    const normalized: Record<string, string> = {}
+    for (const [key, val] of Object.entries(remote)) {
+      const colType = colTypeMap.get(key)
+      normalized[key] = colType ? normalizeValue(val as string, colType) : (val as string)
+    }
     const record: RecordRow = {
-      ...remote,
+      ...normalized,
       sourceId,
       sheetName,
-    }
+    } as RecordRow
     await db.records.put(record)
   }
 }

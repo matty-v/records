@@ -1,4 +1,18 @@
-import type { RecordRow, SheetSchema } from '@/lib/types'
+import type { ColumnDefinition, RecordRow, SheetSchema } from '@/lib/types'
+
+function formatDisplayValue(value: string | undefined, col: ColumnDefinition): string {
+  if (!value) return '—'
+  if (col.columnType === 'boolean') {
+    return value.toLowerCase() === 'true' ? 'Yes' : 'No'
+  }
+  if (col.columnType === 'date') {
+    const d = new Date(value + 'T00:00:00')
+    if (!isNaN(d.getTime())) {
+      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+    }
+  }
+  return value
+}
 
 interface RecordRowCardProps {
   record: RecordRow
@@ -20,7 +34,7 @@ export function RecordRowCard({ record, schema, onClick }: RecordRowCardProps) {
         <div className="min-w-0 flex-1">
           {primaryCol && (
             <p className="text-sm font-medium text-foreground truncate">
-              {record[primaryCol.columnName] || '—'}
+              {formatDisplayValue(record[primaryCol.columnName], primaryCol)}
             </p>
           )}
           {secondaryCols.length > 0 && (
@@ -28,7 +42,7 @@ export function RecordRowCard({ record, schema, onClick }: RecordRowCardProps) {
               {secondaryCols.map((col) => (
                 <span key={col.columnName} className="text-xs text-muted-foreground truncate">
                   <span className="text-[rgba(0,212,255,0.5)]">{col.columnName}:</span>{' '}
-                  {record[col.columnName] || '—'}
+                  {formatDisplayValue(record[col.columnName], col)}
                 </span>
               ))}
             </div>
