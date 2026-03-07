@@ -49,6 +49,7 @@ export function ManageColumnsDialog({
 
   useEffect(() => {
     if (schema) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setColumns(
         schema.columns.map((c) => ({ name: c.columnName, type: c.columnType }))
       )

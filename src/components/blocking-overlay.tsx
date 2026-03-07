@@ -11,6 +11,7 @@ interface BlockingOverlayContextValue {
 
 const BlockingOverlayContext = createContext<BlockingOverlayContextValue | null>(null)
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useBlockingOverlay(): BlockingOverlayContextValue {
   const ctx = useContext(BlockingOverlayContext)
   if (!ctx) {

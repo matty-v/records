@@ -6,7 +6,7 @@ import { CONFIG_SHEET_NAME } from '@/config/constants'
 import type { ColumnDefinition, RecordRow } from './types'
 
 /** Normalize a raw remote value based on column type. */
-function normalizeValue(value: string, columnType: string): string {
+export function normalizeValue(value: string, columnType: string): string {
   if (!value) return value
 
   if (columnType === 'boolean') {

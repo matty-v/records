@@ -10,8 +10,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `npm run build` | TypeScript check + Vite production build (`tsc -b && vite build`) |
 | `npm run lint` | ESLint |
 | `npm run preview` | Preview production build locally |
+| `npm test` | Run unit tests (vitest) |
 
-Vitest is installed but no test scripts are configured yet. When adding tests, use `vitest` (already a devDep).
+Tests live in `src/lib/__tests__/`. A pre-commit hook runs linting and tests before every commit.
 
 ## Architecture
 

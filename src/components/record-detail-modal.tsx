@@ -63,6 +63,7 @@ export function RecordDetailModal({
       for (const col of schema.columns) {
         v[col.columnName] = record[col.columnName] || ''
       }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setValues(v)
     }
     setIsEditing(false)
