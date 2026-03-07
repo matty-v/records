@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { NumberStepper } from '@/components/ui/number-stepper'
 import { Label } from '@/components/ui/label'
 import type { ColumnDefinition, RecordRow, SheetSchema } from '@/lib/types'
 
@@ -108,10 +109,16 @@ export function RecordDetailModal({
                       }`}
                     />
                   </button>
+                ) : col.columnType === 'number' ? (
+                  <NumberStepper
+                    value={values[col.columnName] || ''}
+                    onChange={(val) =>
+                      setValues((prev) => ({ ...prev, [col.columnName]: val }))
+                    }
+                  />
                 ) : (
                   <Input
-                    type={col.columnType === 'number' ? 'number' : col.columnType === 'date' ? 'date' : 'text'}
-                    step={col.columnType === 'number' ? 'any' : undefined}
+                    type={col.columnType === 'date' ? 'date' : 'text'}
                     value={values[col.columnName] || ''}
                     onChange={(e) =>
                       setValues((prev) => ({ ...prev, [col.columnName]: e.target.value }))
