@@ -16,10 +16,10 @@ function normalizeValue(value: string, columnType: string): string {
 
   if (columnType === 'date') {
     // Google Sheets may return ISO strings like "2026-03-03T00:00:00.000Z"
-    // Convert to local YYYY-MM-DD
-    const d = new Date(value)
-    if (!isNaN(d.getTime()) && value.includes('T')) {
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+    // Extract the date portion directly to avoid UTC→local timezone shift
+    const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (match) {
+      return match[1]
     }
   }
 
