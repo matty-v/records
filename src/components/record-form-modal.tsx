@@ -90,7 +90,7 @@ export function RecordFormModal({
               ) : (
                 <Input
                   id={col.columnName}
-                  type={col.columnType === 'date' ? 'date' : 'text'}
+                  type={col.columnType === 'date' ? 'datetime-local' : 'text'}
                   value={values[col.columnName] || ''}
                   onChange={(e) =>
                     setValues((prev) => ({ ...prev, [col.columnName]: e.target.value }))

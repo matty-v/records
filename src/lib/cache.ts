@@ -15,11 +15,15 @@ function normalizeValue(value: string, columnType: string): string {
   }
 
   if (columnType === 'date') {
-    // Google Sheets may return ISO strings like "2026-03-03T00:00:00.000Z"
-    // Extract the date portion directly to avoid UTC→local timezone shift
-    const match = value.match(/^(\d{4}-\d{2}-\d{2})/)
-    if (match) {
-      return match[1]
+    // Google Sheets may return ISO strings like "2026-03-03T14:30:00.000Z"
+    // Extract date+time portion, falling back to date-only for old records
+    const dtMatch = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/)
+    if (dtMatch) {
+      return `${dtMatch[1]}T${dtMatch[2]}`
+    }
+    const dateMatch = value.match(/^(\d{4}-\d{2}-\d{2})/)
+    if (dateMatch) {
+      return dateMatch[1]
     }
   }
 

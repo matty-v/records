@@ -57,7 +57,7 @@ export function useRecords(
         for (const col of schema.columns) {
           if (col.autoPopulate === 'currentDate' && !autoData[col.columnName]) {
             const now = new Date()
-            autoData[col.columnName] = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+            autoData[col.columnName] = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}T${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
           }
         }
       }

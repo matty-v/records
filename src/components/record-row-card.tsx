@@ -6,9 +6,16 @@ function formatDisplayValue(value: string | undefined, col: ColumnDefinition): s
     return value.toLowerCase() === 'true' ? 'Yes' : 'No'
   }
   if (col.columnType === 'date') {
-    const d = new Date(value + 'T00:00:00')
+    // Handle both "YYYY-MM-DD" (legacy) and "YYYY-MM-DDTHH:mm" formats
+    const hasTime = value.includes('T')
+    const d = new Date(hasTime ? value : value + 'T00:00:00')
     if (!isNaN(d.getTime())) {
-      return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+      const opts: Intl.DateTimeFormatOptions = { year: 'numeric', month: 'short', day: 'numeric' }
+      if (hasTime) {
+        opts.hour = 'numeric'
+        opts.minute = '2-digit'
+      }
+      return d.toLocaleString(undefined, opts)
     }
   }
   return value
