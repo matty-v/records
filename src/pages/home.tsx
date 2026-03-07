@@ -301,7 +301,6 @@ export function HomePage() {
           sheetNames={sheetNames}
           activeSheet={activeSheet}
           onSheetChange={setActiveSheet}
-          onDeleteSheet={setSheetToDelete}
         />
         <Button variant="ghost" size="sm" onClick={() => setShowAddSheet(true)}>
           <Plus className="h-4 w-4" />
@@ -381,6 +380,9 @@ export function HomePage() {
         onUpdateSource={updateSource}
         onInitializeSheets={initializeSheets}
         isInitializing={isInitializing}
+        activeSheet={activeSheet}
+        canDeleteSheet={sheetNames.length > 1}
+        onDeleteSheet={setSheetToDelete}
       />
 
       <Dialog open={!!sheetToDelete} onOpenChange={(open) => { if (!open) setSheetToDelete(null) }}>

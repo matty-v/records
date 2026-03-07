@@ -1,10 +1,12 @@
 import { useState } from 'react'
+import { Trash2 } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
 import { SheetsSettingsPanel } from '@/components/sheets'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
 import type { RecordSource } from '@/lib/types'
@@ -16,6 +18,9 @@ interface SettingsDialogProps {
   onUpdateSource: (id: string, updates: Partial<Omit<RecordSource, 'id'>>) => void
   onInitializeSheets: (sheetId: string) => Promise<boolean>
   isInitializing: boolean
+  activeSheet: string | null
+  canDeleteSheet: boolean
+  onDeleteSheet: (name: string) => void
 }
 
 export function SettingsDialog({
@@ -25,6 +30,9 @@ export function SettingsDialog({
   onUpdateSource,
   onInitializeSheets,
   isInitializing,
+  activeSheet,
+  canDeleteSheet,
+  onDeleteSheet,
 }: SettingsDialogProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [tempInput, setTempInput] = useState('')
@@ -40,6 +48,13 @@ export function SettingsDialog({
       setStatus('Success! Spreadsheet updated.')
     } else {
       setStatus('Error: Failed to connect to spreadsheet.')
+    }
+  }
+
+  const handleDeleteSheet = () => {
+    if (activeSheet) {
+      onOpenChange(false)
+      onDeleteSheet(activeSheet)
     }
   }
 
@@ -66,7 +81,20 @@ export function SettingsDialog({
             />
           </div>
 
-
+          {activeSheet && canDeleteSheet && (
+            <div>
+              <h3 className="text-sm font-medium text-foreground mb-3">Active Sheet</h3>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleDeleteSheet}
+                className="w-full"
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Delete "{activeSheet}"
+              </Button>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
