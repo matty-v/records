@@ -32,6 +32,8 @@ interface ManageColumnsDialogProps {
   schema: SheetSchema | null
   onSave: (sheetName: string, columns: ColumnEdit[]) => void
   isSaving: boolean
+  canDeleteSheet: boolean
+  onDeleteSheet: (name: string) => void
 }
 
 export function ManageColumnsDialog({
@@ -40,6 +42,8 @@ export function ManageColumnsDialog({
   schema,
   onSave,
   isSaving,
+  canDeleteSheet,
+  onDeleteSheet,
 }: ManageColumnsDialogProps) {
   const [columns, setColumns] = useState<ColumnEdit[]>([])
 
@@ -77,7 +81,7 @@ export function ManageColumnsDialog({
       <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Manage Columns: <span className="glow-cyan">{schema.sheetName}</span>
+            Manage Sheet: <span className="glow-cyan">{schema.sheetName}</span>
           </DialogTitle>
         </DialogHeader>
 
@@ -120,10 +124,24 @@ export function ManageColumnsDialog({
           </Button>
         </div>
 
-        <DialogFooter>
-          <Button onClick={handleSave} disabled={isSaving}>
+        <DialogFooter className="flex-col gap-3 sm:flex-col">
+          <Button onClick={handleSave} disabled={isSaving} className="w-full">
             {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
+          {canDeleteSheet && (
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                onOpenChange(false)
+                onDeleteSheet(schema.sheetName)
+              }}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Sheet
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

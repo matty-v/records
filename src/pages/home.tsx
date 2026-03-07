@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Plus, Settings, Columns3, RefreshCw } from 'lucide-react'
+import { Plus, Settings, TableProperties, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SourceSelector } from '@/components/source-selector'
 import { SheetTabs } from '@/components/sheet-tabs'
@@ -286,7 +286,7 @@ export function HomePage() {
           </Button>
           {currentSchema && (
             <Button variant="ghost" size="icon" onClick={() => setShowManageColumns(true)}>
-              <Columns3 className="h-5 w-5" />
+              <TableProperties className="h-5 w-5" />
             </Button>
           )}
           <Button variant="ghost" size="icon" onClick={() => setShowSettings(true)}>
@@ -371,6 +371,8 @@ export function HomePage() {
         schema={currentSchema}
         onSave={handleSaveColumns}
         isSaving={isSavingColumns}
+        canDeleteSheet={sheetNames.length > 1}
+        onDeleteSheet={setSheetToDelete}
       />
 
       <SettingsDialog
@@ -380,9 +382,6 @@ export function HomePage() {
         onUpdateSource={updateSource}
         onInitializeSheets={initializeSheets}
         isInitializing={isInitializing}
-        activeSheet={activeSheet}
-        canDeleteSheet={sheetNames.length > 1}
-        onDeleteSheet={setSheetToDelete}
       />
 
       <Dialog open={!!sheetToDelete} onOpenChange={(open) => { if (!open) setSheetToDelete(null) }}>
