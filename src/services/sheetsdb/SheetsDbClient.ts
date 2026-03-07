@@ -69,6 +69,13 @@ export class SheetsDbClient {
     return result?.rows || []
   }
 
+  async getSchema(sheetName: string): Promise<string[]> {
+    const result = await this.request<{ columns: string[] }>(
+      `/sheets/${encodeURIComponent(sheetName)}/schema`
+    )
+    return result?.columns || []
+  }
+
   async createRow<T>(sheetName: string, data: T): Promise<{ rowIndex: number; data: T }> {
     const result = await this.request<{ rowIndex: number; data: T }>(
       `/sheets/${encodeURIComponent(sheetName)}/rows`,
@@ -78,6 +85,16 @@ export class SheetsDbClient {
       }
     )
     return result!
+  }
+
+  async bulkCreateRows<T>(sheetName: string, rows: T[]): Promise<void> {
+    await this.request(
+      `/sheets/${encodeURIComponent(sheetName)}/rows/bulk`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ rows }),
+      }
+    )
   }
 
   async updateRow<T>(sheetName: string, rowIndex: number, data: T): Promise<T | undefined> {

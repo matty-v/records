@@ -195,6 +195,31 @@ export function HomePage() {
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }
 
+        // Check if new columns need to be added to the actual sheet
+        const currentHeaders = await client.getSchema(sheetName)
+        const newColumnNames = columns
+          .map((c) => c.name)
+          .filter((name) => !currentHeaders.includes(name))
+
+        if (newColumnNames.length > 0) {
+          // API only creates headers on empty sheets, so we must
+          // recreate the sheet to establish new column headers
+          const existingRows = await client.getRows<Record<string, string>>(sheetName)
+          await client.deleteSheet(sheetName)
+          await client.createSheet(sheetName)
+
+          // Create placeholder row with all columns to establish headers
+          const placeholder: Record<string, string> = { id: '' }
+          columns.forEach((c) => { placeholder[c.name] = '' })
+          const { rowIndex: phIdx } = await client.createRow(sheetName, placeholder)
+          await client.deleteRow(sheetName, phIdx)
+
+          // Re-insert existing data
+          if (existingRows.length > 0) {
+            await client.bulkCreateRows(sheetName, existingRows)
+          }
+        }
+
         await refreshSchemaFromRemote(activeSource.id, activeSource.spreadsheetId)
         queryClient.invalidateQueries({ queryKey: ['schema'] })
         setShowManageColumns(false)
