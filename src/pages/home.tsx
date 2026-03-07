@@ -24,7 +24,7 @@ import { useSheets } from '@/hooks/use-sheets'
 import { useRecords } from '@/hooks/use-records'
 import { useSettings } from '@/hooks/use-settings'
 import { useBlockingOverlay } from '@/components/blocking-overlay'
-import { toast } from '@/hooks/use-toast'
+
 import { getSheetsClient } from '@/lib/records-api'
 import { refreshSchemaFromRemote, refreshRecordsFromRemote } from '@/lib/cache'
 import { db } from '@/lib/db'
@@ -72,13 +72,8 @@ export function HomePage() {
       queryClient.invalidateQueries({ queryKey: ['schema'] })
       queryClient.invalidateQueries({ queryKey: ['records'] })
 
-      toast({ title: 'Data refreshed' })
     } catch (error) {
-      toast({
-        title: 'Refresh failed',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      })
+      console.error('Refresh failed:', error)
     } finally {
       setIsRefreshing(false)
     }
@@ -97,7 +92,6 @@ export function HomePage() {
     await withOverlay(async () => {
       await createRecord.mutateAsync(data)
       setShowAddForm(false)
-      toast({ title: 'Record created' })
     }, 'Creating record...')
   }, [createRecord, withOverlay])
 
@@ -105,7 +99,6 @@ export function HomePage() {
     await withOverlay(async () => {
       await updateRecord.mutateAsync({ id, data })
       setSelectedRecord(null)
-      toast({ title: 'Record updated' })
     }, 'Updating record...')
   }, [updateRecord, withOverlay])
 
@@ -113,7 +106,6 @@ export function HomePage() {
     await withOverlay(async () => {
       await deleteRecord.mutateAsync(id)
       setSelectedRecord(null)
-      toast({ title: 'Record deleted' })
     }, 'Deleting record...')
   }, [deleteRecord, withOverlay])
 
@@ -163,14 +155,9 @@ export function HomePage() {
         queryClient.invalidateQueries({ queryKey: ['schema'] })
         setShowAddSheet(false)
         setActiveSheet(sheetName)
-        toast({ title: `Sheet "${sheetName}" created` })
       }, 'Creating sheet...')
     } catch (error) {
-      toast({
-        title: 'Failed to create sheet',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      })
+      console.error('Failed to create sheet:', error)
     } finally {
       setIsCreatingSheet(false)
     }
@@ -211,14 +198,9 @@ export function HomePage() {
         await refreshSchemaFromRemote(activeSource.id, activeSource.spreadsheetId)
         queryClient.invalidateQueries({ queryKey: ['schema'] })
         setShowManageColumns(false)
-        toast({ title: 'Columns updated' })
       }, 'Saving columns...')
     } catch (error) {
-      toast({
-        title: 'Failed to save columns',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      })
+      console.error('Failed to save columns:', error)
     } finally {
       setIsSavingColumns(false)
     }
@@ -258,14 +240,9 @@ export function HomePage() {
           setActiveSheet(remaining[0])
         }
 
-        toast({ title: `Sheet "${sheetName}" deleted` })
       }, 'Deleting sheet...')
     } catch (error) {
-      toast({
-        title: 'Failed to delete sheet',
-        description: error instanceof Error ? error.message : 'Unknown error',
-        variant: 'destructive',
-      })
+      console.error('Failed to delete sheet:', error)
     }
   }, [activeSource, withOverlay, queryClient, sheetNames, setActiveSheet])
 

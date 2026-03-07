@@ -4,7 +4,7 @@ import { HomePage } from '@/pages/home'
 import { SheetsSetupWizard } from '@/components/sheets'
 import { AnimatedBackground } from '@/components/animated-background'
 import { BlockingOverlayProvider } from '@/components/blocking-overlay'
-import { Toaster } from '@/components/ui/toaster'
+
 import { useSources } from '@/hooks/use-sources'
 import { useSettings } from '@/hooks/use-settings'
 import { SERVICE_ACCOUNT_EMAIL } from '@/config/constants'
@@ -72,7 +72,6 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <BlockingOverlayProvider>
         <AppContent />
-        <Toaster />
       </BlockingOverlayProvider>
     </QueryClientProvider>
   )
