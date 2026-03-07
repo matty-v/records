@@ -371,7 +371,7 @@ export function HomePage() {
         schema={currentSchema}
         onSave={handleSaveColumns}
         isSaving={isSavingColumns}
-        canDeleteSheet={sheetNames.length > 1}
+        canDeleteSheet={sheetNames.length > 0}
         onDeleteSheet={setSheetToDelete}
       />
 
