@@ -24,12 +24,15 @@ import { useSheets } from '@/hooks/use-sheets'
 import { useRecords } from '@/hooks/use-records'
 import { useSettings } from '@/hooks/use-settings'
 import { useBlockingOverlay } from '@/components/blocking-overlay'
+import { ViewModeToggle, type ViewMode } from '@/components/view-mode-toggle'
+import { ChartView } from '@/components/chart-view'
 
 import { getSheetsClient } from '@/lib/records-api'
 import { refreshSchemaFromRemote, refreshRecordsFromRemote } from '@/lib/cache'
 import { db } from '@/lib/db'
 import { serializeConfigRow } from '@/lib/schema-utils'
 import { CONFIG_SHEET_NAME } from '@/config/constants'
+import { detectVisualizations } from '@/lib/chart-utils'
 import type { RecordRow, ColumnType } from '@/lib/types'
 
 export function HomePage() {
@@ -50,6 +53,9 @@ export function HomePage() {
     updateRecord,
     deleteRecord,
   } = useRecords(activeSource?.id ?? null, activeSource?.spreadsheetId ?? null, activeSheet, currentSchema ?? null)
+
+  const visualizations = currentSchema ? detectVisualizations(currentSchema) : []
+  const hasCharts = visualizations.length > 0
 
   const [isRefreshing, setIsRefreshing] = useState(false)
 
@@ -87,6 +93,7 @@ export function HomePage() {
   const [isCreatingSheet, setIsCreatingSheet] = useState(false)
   const [isSavingColumns, setIsSavingColumns] = useState(false)
   const [sheetToDelete, setSheetToDelete] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState<ViewMode>('table')
 
   const handleCreateRecord = useCallback(async (data: Record<string, string>) => {
     await withOverlay(async () => {
@@ -300,21 +307,31 @@ export function HomePage() {
         <SheetTabs
           sheetNames={sheetNames}
           activeSheet={activeSheet}
-          onSheetChange={setActiveSheet}
+          onSheetChange={(name) => { setActiveSheet(name); setViewMode('table') }}
         />
         <Button variant="ghost" size="sm" onClick={() => setShowAddSheet(true)}>
           <Plus className="h-4 w-4" />
         </Button>
       </div>
 
+      {currentSchema && hasCharts && (
+        <div className="mb-4">
+          <ViewModeToggle mode={viewMode} onChange={setViewMode} />
+        </div>
+      )}
+
       {/* Records */}
       {currentSchema ? (
-        <RecordTable
-          records={records}
-          schema={currentSchema}
-          isLoading={isLoading}
-          onRecordClick={setSelectedRecord}
-        />
+        viewMode === 'chart' && hasCharts ? (
+          <ChartView visualizations={visualizations} records={records} />
+        ) : (
+          <RecordTable
+            records={records}
+            schema={currentSchema}
+            isLoading={isLoading}
+            onRecordClick={setSelectedRecord}
+          />
+        )
       ) : (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <p className="text-sm font-light">No sheets configured</p>
@@ -326,7 +343,7 @@ export function HomePage() {
       )}
 
       {/* FAB */}
-      {currentSchema && (
+      {currentSchema && viewMode === 'table' && (
         <button
           onClick={() => setShowAddForm(true)}
           className="fixed bottom-6 right-6 h-14 w-14 rounded-full bg-[var(--accent-cyan)] text-[#0a0e14] shadow-[0_0_30px_rgba(0,212,255,0.3)] hover:shadow-[0_0_40px_rgba(0,212,255,0.5)] transition-all duration-300 flex items-center justify-center z-40"
