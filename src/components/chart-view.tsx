@@ -29,6 +29,18 @@ interface ChartViewProps {
 
 const COLORS = ['#00d4ff', '#a78bfa', '#ec4899', '#34d399', '#fbbf24']
 
+/** Format a YYYY-MM-DD HH:mm string for compact axis display. */
+function formatDateTick(value: string): string {
+  if (typeof value !== 'string') return String(value)
+  // "2024-03-15 10:00" → "3/15 10:00"
+  const parts = value.split(' ')
+  const datePart = parts[0]
+  const timePart = parts[1]
+  const [, month, day] = datePart.split('-')
+  const shortDate = `${parseInt(month)}/${parseInt(day)}`
+  return timePart ? `${shortDate} ${timePart}` : shortDate
+}
+
 const tooltipStyle = {
   contentStyle: {
     background: 'rgba(18,24,33,0.95)',
@@ -98,6 +110,7 @@ function LineChartCard({
             dataKey="date"
             stroke="rgba(100,150,255,0.5)"
             tick={{ fontSize: 11 }}
+            tickFormatter={formatDateTick}
           />
           <YAxis
             stroke="rgba(100,150,255,0.5)"
@@ -150,6 +163,7 @@ function BarChartCard({
             dataKey="date"
             stroke="rgba(100,150,255,0.5)"
             tick={{ fontSize: 11 }}
+            tickFormatter={formatDateTick}
           />
           <YAxis
             stroke="rgba(100,150,255,0.5)"

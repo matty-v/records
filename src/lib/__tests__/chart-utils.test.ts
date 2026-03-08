@@ -145,26 +145,38 @@ function makeRecord(overrides: Record<string, string>): RecordRow {
 }
 
 describe('prepareLineData', () => {
-  it('groups values by date and sorts chronologically', () => {
+  it('groups values by datetime and sorts chronologically', () => {
     const records = [
       makeRecord({ date: '2024-03-15T10:00:00', weight: '80' }),
       makeRecord({ date: '2024-03-14T09:00:00', weight: '79' }),
     ]
     const result = prepareLineData(records, 'date', ['weight'])
     expect(result).toEqual([
-      { date: '2024-03-14', weight: 79 },
-      { date: '2024-03-15', weight: 80 },
+      { date: '2024-03-14 09:00', weight: 79 },
+      { date: '2024-03-15 10:00', weight: 80 },
     ])
   })
 
-  it('averages multiple values on the same date', () => {
+  it('averages multiple values at the same datetime', () => {
+    const records = [
+      makeRecord({ date: '2024-03-15T10:00:00', weight: '80' }),
+      makeRecord({ date: '2024-03-15T10:00:00', weight: '82' }),
+    ]
+    const result = prepareLineData(records, 'date', ['weight'])
+    expect(result).toEqual([
+      { date: '2024-03-15 10:00', weight: 81 },
+    ])
+  })
+
+  it('creates separate data points for different times on the same date', () => {
     const records = [
       makeRecord({ date: '2024-03-15T10:00:00', weight: '80' }),
       makeRecord({ date: '2024-03-15T20:00:00', weight: '82' }),
     ]
     const result = prepareLineData(records, 'date', ['weight'])
     expect(result).toEqual([
-      { date: '2024-03-15', weight: 81 },
+      { date: '2024-03-15 10:00', weight: 80 },
+      { date: '2024-03-15 20:00', weight: 82 },
     ])
   })
 
@@ -204,44 +216,44 @@ describe('prepareLineData', () => {
 })
 
 describe('prepareBooleanBarData', () => {
-  it('counts true/false per date per boolean column', () => {
+  it('counts true/false per datetime per boolean column', () => {
     const records = [
-      makeRecord({ date: '2024-01-01', exercised: 'true' }),
-      makeRecord({ date: '2024-01-01', exercised: 'false' }),
-      makeRecord({ date: '2024-01-01', exercised: 'true' }),
-      makeRecord({ date: '2024-01-02', exercised: 'false' }),
+      makeRecord({ date: '2024-01-01T08:00:00', exercised: 'true' }),
+      makeRecord({ date: '2024-01-01T08:00:00', exercised: 'false' }),
+      makeRecord({ date: '2024-01-01T08:00:00', exercised: 'true' }),
+      makeRecord({ date: '2024-01-02T09:00:00', exercised: 'false' }),
     ]
     const result = prepareBooleanBarData(records, 'date', ['exercised'])
     expect(result).toEqual([
-      { date: '2024-01-01', exercised_true: 2, exercised_false: 1 },
-      { date: '2024-01-02', exercised_true: 0, exercised_false: 1 },
+      { date: '2024-01-01 08:00', exercised_true: 2, exercised_false: 1 },
+      { date: '2024-01-02 09:00', exercised_true: 0, exercised_false: 1 },
     ])
   })
 
   it('handles multiple boolean columns', () => {
     const records = [
-      makeRecord({ date: '2024-01-01', exercised: 'true', meditated: 'false' }),
+      makeRecord({ date: '2024-01-01T10:00:00', exercised: 'true', meditated: 'false' }),
     ]
     const result = prepareBooleanBarData(records, 'date', ['exercised', 'meditated'])
     expect(result).toEqual([
-      { date: '2024-01-01', exercised_true: 1, exercised_false: 0, meditated_true: 0, meditated_false: 1 },
+      { date: '2024-01-01 10:00', exercised_true: 1, exercised_false: 0, meditated_true: 0, meditated_false: 1 },
     ])
   })
 
-  it('sorts dates chronologically', () => {
+  it('sorts datetimes chronologically', () => {
     const records = [
-      makeRecord({ date: '2024-03-15', exercised: 'true' }),
-      makeRecord({ date: '2024-01-01', exercised: 'true' }),
+      makeRecord({ date: '2024-03-15T12:00:00', exercised: 'true' }),
+      makeRecord({ date: '2024-01-01T08:00:00', exercised: 'true' }),
     ]
     const result = prepareBooleanBarData(records, 'date', ['exercised'])
-    expect(result[0].date).toBe('2024-01-01')
-    expect(result[1].date).toBe('2024-03-15')
+    expect(result[0].date).toBe('2024-01-01 08:00')
+    expect(result[1].date).toBe('2024-03-15 12:00')
   })
 
   it('treats case-insensitive "TRUE" as true', () => {
     const records = [
-      makeRecord({ date: '2024-01-01', exercised: 'TRUE' }),
-      makeRecord({ date: '2024-01-01', exercised: 'True' }),
+      makeRecord({ date: '2024-01-01T10:00:00', exercised: 'TRUE' }),
+      makeRecord({ date: '2024-01-01T10:00:00', exercised: 'True' }),
     ]
     const result = prepareBooleanBarData(records, 'date', ['exercised'])
     expect(result[0].exercised_true).toBe(2)
@@ -250,8 +262,8 @@ describe('prepareBooleanBarData', () => {
 
   it('skips empty boolean values', () => {
     const records = [
-      makeRecord({ date: '2024-01-01', exercised: '' }),
-      makeRecord({ date: '2024-01-01', exercised: 'true' }),
+      makeRecord({ date: '2024-01-01T10:00:00', exercised: '' }),
+      makeRecord({ date: '2024-01-01T10:00:00', exercised: 'true' }),
     ]
     const result = prepareBooleanBarData(records, 'date', ['exercised'])
     expect(result[0].exercised_true).toBe(1)

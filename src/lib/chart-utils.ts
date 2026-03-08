@@ -80,8 +80,14 @@ export function detectVisualizations(schema: SheetSchema): Visualization[] {
 /*  Task 3 – Chart data aggregation helpers                            */
 /* ------------------------------------------------------------------ */
 
-/** Extract YYYY-MM-DD from a datetime string. */
-function extractDate(dateStr: string): string {
+/** Extract YYYY-MM-DD HH:mm from a datetime string, or YYYY-MM-DD if no time component. */
+function extractDateTime(dateStr: string): string {
+  const tIndex = dateStr.indexOf('T')
+  if (tIndex !== -1) {
+    const date = dateStr.slice(0, 10)
+    const time = dateStr.slice(11, 16) // HH:mm
+    return `${date} ${time}`
+  }
   return dateStr.slice(0, 10)
 }
 
@@ -106,7 +112,7 @@ export function prepareLineData(
   for (const record of records) {
     const rawDate = record[dateColumn]
     if (!rawDate) continue
-    const date = extractDate(rawDate)
+    const date = extractDateTime(rawDate)
 
     if (!grouped.has(date)) {
       grouped.set(date, new Map())
@@ -154,7 +160,7 @@ export function prepareBooleanBarData(
   for (const record of records) {
     const rawDate = record[dateColumn]
     if (!rawDate) continue
-    const date = extractDate(rawDate)
+    const date = extractDateTime(rawDate)
 
     if (!grouped.has(date)) {
       grouped.set(date, new Map())
