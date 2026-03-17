@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NumberStepper } from '@/components/ui/number-stepper'
+import { SelectWithAdd } from '@/components/ui/select-with-add'
 import { Label } from '@/components/ui/label'
 import type { SheetSchema } from '@/lib/types'
 
@@ -17,6 +18,7 @@ interface RecordFormModalProps {
   onOpenChange: (open: boolean) => void
   schema: SheetSchema
   onSubmit: (data: Record<string, string>) => void
+  onOptionsChange?: (columnName: string, newOptions: string) => void
   isSubmitting: boolean
 }
 
@@ -25,6 +27,7 @@ export function RecordFormModal({
   onOpenChange,
   schema,
   onSubmit,
+  onOptionsChange = () => {},
   isSubmitting,
 }: RecordFormModalProps) {
   const [values, setValues] = useState<Record<string, string>>({})
@@ -85,6 +88,21 @@ export function RecordFormModal({
                   onChange={(val) =>
                     setValues((prev) => ({ ...prev, [col.columnName]: val }))
                   }
+                  placeholder={col.columnName}
+                />
+              ) : col.columnType === 'select' ? (
+                <SelectWithAdd
+                  id={col.columnName}
+                  options={(col.options || '').split(',').map((o) => o.trim()).filter(Boolean)}
+                  value={values[col.columnName] || ''}
+                  onChange={(val) =>
+                    setValues((prev) => ({ ...prev, [col.columnName]: val }))
+                  }
+                  onAddOption={(newOpt) => {
+                    const current = col.options || ''
+                    const updated = current ? `${current},${newOpt}` : newOpt
+                    onOptionsChange(col.columnName, updated)
+                  }}
                   placeholder={col.columnName}
                 />
               ) : (

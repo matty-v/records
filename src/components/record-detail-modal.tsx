@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { NumberStepper } from '@/components/ui/number-stepper'
+import { SelectWithAdd } from '@/components/ui/select-with-add'
 import { Label } from '@/components/ui/label'
 import type { ColumnDefinition, RecordRow, SheetSchema } from '@/lib/types'
 
@@ -40,6 +41,7 @@ interface RecordDetailModalProps {
   schema: SheetSchema
   onUpdate: (id: string, data: Record<string, string>) => void
   onDelete: (id: string) => void
+  onOptionsChange?: (columnName: string, newOptions: string) => void
   isUpdating: boolean
   isDeleting: boolean
 }
@@ -51,6 +53,7 @@ export function RecordDetailModal({
   schema,
   onUpdate,
   onDelete,
+  onOptionsChange = () => {},
   isUpdating,
   isDeleting,
 }: RecordDetailModalProps) {
@@ -123,6 +126,20 @@ export function RecordDetailModal({
                     onChange={(val) =>
                       setValues((prev) => ({ ...prev, [col.columnName]: val }))
                     }
+                  />
+                ) : col.columnType === 'select' ? (
+                  <SelectWithAdd
+                    options={(col.options || '').split(',').map((o) => o.trim()).filter(Boolean)}
+                    value={values[col.columnName] || ''}
+                    onChange={(val) =>
+                      setValues((prev) => ({ ...prev, [col.columnName]: val }))
+                    }
+                    onAddOption={(newOpt) => {
+                      const current = col.options || ''
+                      const updated = current ? `${current},${newOpt}` : newOpt
+                      onOptionsChange(col.columnName, updated)
+                    }}
+                    placeholder={col.columnName}
                   />
                 ) : (
                   <Input
