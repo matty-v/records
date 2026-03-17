@@ -9,4 +9,4 @@ export const SERVICE_ACCOUNT_EMAIL = 'sheets-db-api@kinetic-object-322814.iam.gs
 
 export const CONFIG_SHEET_NAME = '_config'
 
-export const COLUMN_TYPES = ['text', 'number', 'date', 'boolean'] as const
+export const COLUMN_TYPES = ['text', 'number', 'date', 'boolean', 'select'] as const
