@@ -43,6 +43,10 @@ describe('normalizeValue', () => {
     it('returns number values unchanged', () => {
       expect(normalizeValue('42', 'number')).toBe('42')
     })
+
+    it('returns select values unchanged', () => {
+      expect(normalizeValue('Open', 'select')).toBe('Open')
+    })
   })
 
   it('returns empty string unchanged', () => {
