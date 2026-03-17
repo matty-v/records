@@ -23,6 +23,7 @@ import type { ColumnType, SheetSchema } from '@/lib/types'
 interface ColumnEdit {
   name: string
   type: ColumnType
+  options?: string
   isNew?: boolean
 }
 
@@ -51,7 +52,7 @@ export function ManageColumnsDialog({
     if (schema) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setColumns(
-        schema.columns.map((c) => ({ name: c.columnName, type: c.columnType }))
+        schema.columns.map((c) => ({ name: c.columnName, type: c.columnType, options: c.options }))
       )
     }
   }, [schema])
@@ -89,35 +90,45 @@ export function ManageColumnsDialog({
         <div className="space-y-3">
           <Label>Columns</Label>
           {columns.map((col, index) => (
-            <div key={index} className="flex gap-2 items-center">
-              <Input
-                value={col.name}
-                onChange={(e) => updateColumn(index, 'name', e.target.value)}
-                placeholder="Column name"
-                className="flex-1"
-                disabled={!col.isNew}
-              />
-              <Select
-                value={col.type}
-                onValueChange={(v) => updateColumn(index, 'type', v)}
-              >
-                <SelectTrigger className="w-28">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COLUMN_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => removeColumn(index)}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <div key={index} className="space-y-2">
+              <div className="flex gap-2 items-center">
+                <Input
+                  value={col.name}
+                  onChange={(e) => updateColumn(index, 'name', e.target.value)}
+                  placeholder="Column name"
+                  className="flex-1"
+                  disabled={!col.isNew}
+                />
+                <Select
+                  value={col.type}
+                  onValueChange={(v) => updateColumn(index, 'type', v)}
+                >
+                  <SelectTrigger className="w-28">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {COLUMN_TYPES.map((t) => (
+                      <SelectItem key={t} value={t}>{t}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => removeColumn(index)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+              {col.type === 'select' && (
+                <Input
+                  value={col.options || ''}
+                  onChange={(e) => updateColumn(index, 'options', e.target.value)}
+                  placeholder="Options (comma-separated, e.g. Red,Green,Blue)"
+                  className="ml-0 text-xs"
+                />
+              )}
             </div>
           ))}
           <Button type="button" variant="ghost" size="sm" onClick={addColumn}>
