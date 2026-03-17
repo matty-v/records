@@ -118,7 +118,7 @@ export function HomePage() {
 
   const handleCreateSheet = useCallback(async (
     sheetName: string,
-    columns: { name: string; type: ColumnType; autoPopulate?: 'currentDate' }[]
+    columns: { name: string; type: ColumnType; autoPopulate?: 'currentDate'; options?: string }[]
   ) => {
     if (!activeSource) return
     setIsCreatingSheet(true)
@@ -135,11 +135,20 @@ export function HomePage() {
         const { rowIndex } = await client.createRow(sheetName, placeholder)
         await client.deleteRow(sheetName, rowIndex)
 
-        // Ensure _config sheet has the autoPopulate header column
-        if (columns.some((c) => c.autoPopulate)) {
+        // Ensure _config sheet has the needed header columns
+        const needsAutoPopulate = columns.some((c) => c.autoPopulate)
+        const needsOptions = columns.some((c) => c.options)
+        if (needsAutoPopulate || needsOptions) {
           const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
-          if (configRows.length === 0 || !('autoPopulate' in configRows[0])) {
-            const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', autoPopulate: '' }
+          const missingHeaders: Record<string, string> = {}
+          if (needsAutoPopulate && (configRows.length === 0 || !('autoPopulate' in configRows[0]))) {
+            missingHeaders.autoPopulate = ''
+          }
+          if (needsOptions && (configRows.length === 0 || !('options' in configRows[0]))) {
+            missingHeaders.options = ''
+          }
+          if (Object.keys(missingHeaders).length > 0) {
+            const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', ...missingHeaders }
             const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
             await client.deleteRow(CONFIG_SHEET_NAME, phIdx)
           }
@@ -153,6 +162,7 @@ export function HomePage() {
             columnType: columns[i].type,
             columnOrder: i + 1,
             ...(columns[i].autoPopulate ? { autoPopulate: columns[i].autoPopulate } : {}),
+            ...(columns[i].options ? { options: columns[i].options } : {}),
           })
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }
@@ -172,7 +182,7 @@ export function HomePage() {
 
   const handleSaveColumns = useCallback(async (
     sheetName: string,
-    columns: { name: string; type: ColumnType }[]
+    columns: { name: string; type: ColumnType; options?: string; autoPopulate?: 'currentDate' }[]
   ) => {
     if (!activeSource) return
     setIsSavingColumns(true)
@@ -182,6 +192,18 @@ export function HomePage() {
 
         // Get existing _config rows for this sheet
         const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+
+        // Ensure _config sheet has the options header column
+        if (columns.some((c) => c.options) && (configRows.length === 0 || !('options' in configRows[0]))) {
+          const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', options: '' }
+          const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
+          await client.deleteRow(CONFIG_SHEET_NAME, phIdx)
+          // Re-fetch configRows since indices shifted
+          const refreshed = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+          configRows.length = 0
+          configRows.push(...refreshed)
+        }
+
         const sheetConfigRows = configRows
           .map((row, idx) => ({ row, rowIndex: idx + 2 }))
           .filter(({ row }) => row.sheetName === sheetName)
@@ -198,6 +220,8 @@ export function HomePage() {
             columnName: columns[i].name,
             columnType: columns[i].type,
             columnOrder: i + 1,
+            ...(columns[i].autoPopulate ? { autoPopulate: columns[i].autoPopulate } : {}),
+            ...(columns[i].options ? { options: columns[i].options } : {}),
           })
           await client.createRow(CONFIG_SHEET_NAME, configRow)
         }
@@ -237,6 +261,17 @@ export function HomePage() {
       setIsSavingColumns(false)
     }
   }, [activeSource, withOverlay, queryClient])
+
+  const handleOptionsChange = useCallback(async (columnName: string, newOptions: string) => {
+    if (!activeSource || !currentSchema) return
+    const columns = currentSchema.columns.map((col) => ({
+      name: col.columnName,
+      type: col.columnType,
+      options: col.columnName === columnName ? newOptions : col.options,
+      autoPopulate: col.autoPopulate,
+    }))
+    await handleSaveColumns(currentSchema.sheetName, columns)
+  }, [activeSource, currentSchema, handleSaveColumns])
 
   const handleDeleteSheet = useCallback(async (sheetName: string) => {
     if (!activeSource) return
@@ -360,6 +395,7 @@ export function HomePage() {
             onOpenChange={setShowAddForm}
             schema={currentSchema}
             onSubmit={handleCreateRecord}
+            onOptionsChange={handleOptionsChange}
             isSubmitting={createRecord.isPending}
           />
           <RecordDetailModal
@@ -369,6 +405,7 @@ export function HomePage() {
             schema={currentSchema}
             onUpdate={handleUpdateRecord}
             onDelete={handleDeleteRecord}
+            onOptionsChange={handleOptionsChange}
             isUpdating={updateRecord.isPending}
             isDeleting={deleteRecord.isPending}
           />

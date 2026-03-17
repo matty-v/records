@@ -26,11 +26,24 @@ export interface DonutVisualization {
   booleanColumns: string[]
 }
 
+export interface SelectDonutVisualization {
+  type: 'selectDonut'
+  selectColumns: string[]
+}
+
+export interface SelectBarVisualization {
+  type: 'selectBar'
+  dateColumn: string
+  selectColumn: string
+}
+
 export type Visualization =
   | LineVisualization
   | BarVisualization
   | SummaryVisualization
   | DonutVisualization
+  | SelectDonutVisualization
+  | SelectBarVisualization
 
 /* ------------------------------------------------------------------ */
 /*  Task 2 – detectVisualizations                                      */
@@ -49,9 +62,14 @@ export function detectVisualizations(schema: SheetSchema): Visualization[] {
     .filter((c) => c.columnType === 'boolean')
     .map((c) => c.columnName)
 
+  const selectColumns = schema.columns
+    .filter((c) => c.columnType === 'select')
+    .map((c) => c.columnName)
+
   const hasDate = dateColumns.length > 0
   const hasNumeric = numericColumns.length > 0
   const hasBoolean = booleanColumns.length > 0
+  const hasSelect = selectColumns.length > 0
 
   const visualizations: Visualization[] = []
 
@@ -64,12 +82,20 @@ export function detectVisualizations(schema: SheetSchema): Visualization[] {
     if (hasBoolean) {
       visualizations.push({ type: 'bar', dateColumn, booleanColumns })
     }
+    if (hasSelect) {
+      for (const col of selectColumns) {
+        visualizations.push({ type: 'selectBar', dateColumn, selectColumn: col })
+      }
+    }
   } else {
     if (hasNumeric) {
       visualizations.push({ type: 'summary', valueColumns: numericColumns })
     }
     if (hasBoolean) {
       visualizations.push({ type: 'donut', booleanColumns })
+    }
+    if (hasSelect) {
+      visualizations.push({ type: 'selectDonut', selectColumns })
     }
   }
 
@@ -273,5 +299,69 @@ export function prepareBooleanDonutData(
     }
 
     return { column, trueCount, falseCount }
+  })
+}
+
+export interface SelectDonutData {
+  column: string
+  slices: { value: string; count: number }[]
+}
+
+/**
+ * Counts occurrences of each unique value per select column.
+ */
+export function prepareSelectDonutData(
+  records: RecordRow[],
+  selectColumns: string[],
+): SelectDonutData[] {
+  return selectColumns.map((column) => {
+    const counts = new Map<string, number>()
+
+    for (const record of records) {
+      const val = record[column]
+      if (val === undefined || val === '') continue
+      counts.set(val, (counts.get(val) || 0) + 1)
+    }
+
+    const slices = Array.from(counts.entries()).map(([value, count]) => ({ value, count }))
+    return { column, slices }
+  })
+}
+
+/**
+ * Counts occurrences of each select value per date bucket.
+ * Returns objects shaped as { date, value1: N, value2: N, ... }.
+ */
+export function prepareSelectBarData(
+  records: RecordRow[],
+  dateColumn: string,
+  selectColumn: string,
+): Record<string, string | number>[] {
+  const grouped = new Map<string, Map<string, number>>()
+
+  for (const record of records) {
+    const rawDate = record[dateColumn]
+    if (!rawDate) continue
+    const date = extractDateTime(rawDate)
+
+    const val = record[selectColumn]
+    if (val === undefined || val === '') continue
+
+    if (!grouped.has(date)) {
+      grouped.set(date, new Map())
+    }
+    const dateGroup = grouped.get(date)!
+    dateGroup.set(val, (dateGroup.get(val) || 0) + 1)
+  }
+
+  const sortedDates = [...grouped.keys()].sort()
+
+  return sortedDates.map((date) => {
+    const row: Record<string, string | number> = { date }
+    const dateGroup = grouped.get(date)!
+    for (const [val, count] of dateGroup) {
+      row[val] = count
+    }
+    return row
   })
 }

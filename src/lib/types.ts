@@ -1,4 +1,4 @@
-export type ColumnType = 'text' | 'number' | 'date' | 'boolean'
+export type ColumnType = 'text' | 'number' | 'date' | 'boolean' | 'select'
 
 export interface ColumnDefinition {
   sheetName: string
@@ -6,6 +6,7 @@ export interface ColumnDefinition {
   columnType: ColumnType
   columnOrder: number
   autoPopulate?: 'currentDate'
+  options?: string
 }
 
 export interface SheetSchema {

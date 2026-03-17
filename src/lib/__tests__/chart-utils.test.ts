@@ -5,6 +5,8 @@ import {
   prepareBooleanBarData,
   computeSummaryStats,
   prepareBooleanDonutData,
+  prepareSelectDonutData,
+  prepareSelectBarData,
   type Visualization,
 } from '../chart-utils'
 import type { SheetSchema, RecordRow } from '../types'
@@ -133,6 +135,47 @@ describe('detectVisualizations', () => {
     expect(result).toHaveLength(2)
     expect(result).toContainEqual({ type: 'summary', valueColumns: ['count'] })
     expect(result).toContainEqual({ type: 'donut', booleanColumns: ['active'] })
+  })
+
+  it('returns selectDonut for select-only columns (no date)', () => {
+    const schema: SheetSchema = {
+      sheetName: 'Tasks',
+      columns: [
+        { sheetName: 'Tasks', columnName: 'title', columnType: 'text', columnOrder: 1 },
+        { sheetName: 'Tasks', columnName: 'status', columnType: 'select', columnOrder: 2 },
+        { sheetName: 'Tasks', columnName: 'priority', columnType: 'select', columnOrder: 3 },
+      ],
+    }
+    const result = detectVisualizations(schema)
+    expect(result).toEqual([
+      { type: 'selectDonut', selectColumns: ['status', 'priority'] },
+    ])
+  })
+
+  it('returns selectBar for select + date columns', () => {
+    const schema: SheetSchema = {
+      sheetName: 'Tasks',
+      columns: [
+        { sheetName: 'Tasks', columnName: 'created', columnType: 'date', columnOrder: 1 },
+        { sheetName: 'Tasks', columnName: 'status', columnType: 'select', columnOrder: 2 },
+      ],
+    }
+    const result = detectVisualizations(schema)
+    expect(result).toContainEqual({ type: 'selectBar', dateColumn: 'created', selectColumn: 'status' })
+  })
+
+  it('returns selectBar per select column when multiple exist with date', () => {
+    const schema: SheetSchema = {
+      sheetName: 'Tasks',
+      columns: [
+        { sheetName: 'Tasks', columnName: 'created', columnType: 'date', columnOrder: 1 },
+        { sheetName: 'Tasks', columnName: 'status', columnType: 'select', columnOrder: 2 },
+        { sheetName: 'Tasks', columnName: 'priority', columnType: 'select', columnOrder: 3 },
+      ],
+    }
+    const result = detectVisualizations(schema)
+    expect(result).toContainEqual({ type: 'selectBar', dateColumn: 'created', selectColumn: 'status' })
+    expect(result).toContainEqual({ type: 'selectBar', dateColumn: 'created', selectColumn: 'priority' })
   })
 })
 
@@ -378,5 +421,103 @@ describe('prepareBooleanDonutData', () => {
     expect(result).toEqual([
       { column: 'active', trueCount: 0, falseCount: 0 },
     ])
+  })
+})
+
+describe('prepareSelectDonutData', () => {
+  it('counts occurrences of each unique value per select column', () => {
+    const records = [
+      makeRecord({ status: 'Open' }),
+      makeRecord({ status: 'Done' }),
+      makeRecord({ status: 'Open' }),
+      makeRecord({ status: 'Done' }),
+      makeRecord({ status: 'Done' }),
+    ]
+    const result = prepareSelectDonutData(records, ['status'])
+    expect(result).toEqual([
+      {
+        column: 'status',
+        slices: [
+          { value: 'Open', count: 2 },
+          { value: 'Done', count: 3 },
+        ],
+      },
+    ])
+  })
+
+  it('handles multiple select columns', () => {
+    const records = [
+      makeRecord({ status: 'Open', priority: 'High' }),
+      makeRecord({ status: 'Done', priority: 'Low' }),
+    ]
+    const result = prepareSelectDonutData(records, ['status', 'priority'])
+    expect(result).toHaveLength(2)
+    expect(result[0].column).toBe('status')
+    expect(result[1].column).toBe('priority')
+  })
+
+  it('skips empty values', () => {
+    const records = [
+      makeRecord({ status: 'Open' }),
+      makeRecord({ status: '' }),
+      makeRecord({ status: 'Done' }),
+    ]
+    const result = prepareSelectDonutData(records, ['status'])
+    const totalCount = result[0].slices.reduce((sum, s) => sum + s.count, 0)
+    expect(totalCount).toBe(2)
+  })
+
+  it('returns empty slices for empty records', () => {
+    const result = prepareSelectDonutData([], ['status'])
+    expect(result).toEqual([{ column: 'status', slices: [] }])
+  })
+})
+
+describe('prepareSelectBarData', () => {
+  it('counts occurrences of each value per date', () => {
+    const records = [
+      makeRecord({ date: '2024-01-01T10:00:00', status: 'Open' }),
+      makeRecord({ date: '2024-01-01T10:00:00', status: 'Open' }),
+      makeRecord({ date: '2024-01-01T10:00:00', status: 'Done' }),
+      makeRecord({ date: '2024-01-02T10:00:00', status: 'Done' }),
+    ]
+    const result = prepareSelectBarData(records, 'date', 'status')
+    expect(result).toEqual([
+      { date: '2024-01-01 10:00', Open: 2, Done: 1 },
+      { date: '2024-01-02 10:00', Done: 1 },
+    ])
+  })
+
+  it('sorts by date chronologically', () => {
+    const records = [
+      makeRecord({ date: '2024-03-15T12:00:00', status: 'Open' }),
+      makeRecord({ date: '2024-01-01T08:00:00', status: 'Done' }),
+    ]
+    const result = prepareSelectBarData(records, 'date', 'status')
+    expect(result[0].date).toBe('2024-01-01 08:00')
+    expect(result[1].date).toBe('2024-03-15 12:00')
+  })
+
+  it('skips records with missing date', () => {
+    const records = [
+      makeRecord({ date: '', status: 'Open' }),
+      makeRecord({ status: 'Done' }),
+      makeRecord({ date: '2024-01-01', status: 'Open' }),
+    ]
+    const result = prepareSelectBarData(records, 'date', 'status')
+    expect(result).toHaveLength(1)
+  })
+
+  it('skips empty select values', () => {
+    const records = [
+      makeRecord({ date: '2024-01-01T10:00:00', status: '' }),
+      makeRecord({ date: '2024-01-01T10:00:00', status: 'Open' }),
+    ]
+    const result = prepareSelectBarData(records, 'date', 'status')
+    expect(result).toEqual([{ date: '2024-01-01 10:00', Open: 1 }])
+  })
+
+  it('returns empty array for empty records', () => {
+    expect(prepareSelectBarData([], 'date', 'status')).toEqual([])
   })
 })

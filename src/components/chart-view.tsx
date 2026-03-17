@@ -20,6 +20,8 @@ import {
   prepareBooleanBarData,
   computeSummaryStats,
   prepareBooleanDonutData,
+  prepareSelectDonutData,
+  prepareSelectBarData,
 } from '@/lib/chart-utils'
 
 interface ChartViewProps {
@@ -72,6 +74,10 @@ export function ChartView({ visualizations, records }: ChartViewProps) {
             return <SummaryCard key={i} viz={viz} records={records} />
           case 'donut':
             return <DonutChartCard key={i} viz={viz} records={records} />
+          case 'selectDonut':
+            return <SelectDonutChartCard key={i} viz={viz} records={records} />
+          case 'selectBar':
+            return <SelectBarChartCard key={i} viz={viz} records={records} />
           default:
             return null
         }
@@ -302,6 +308,127 @@ function DonutChartCard({
           )
         })}
       </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Select donut chart                                                 */
+/* ------------------------------------------------------------------ */
+
+function SelectDonutChartCard({
+  viz,
+  records,
+}: {
+  viz: Extract<Visualization, { type: 'selectDonut' }>
+  records: RecordRow[]
+}) {
+  const donutData = prepareSelectDonutData(records, viz.selectColumns)
+
+  if (donutData.every((d) => d.slices.length === 0)) {
+    return (
+      <div className="tech-card rounded-xl p-4 text-muted-foreground text-sm">
+        Not enough data to chart
+      </div>
+    )
+  }
+
+  return (
+    <div className="tech-card rounded-xl p-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        {donutData.map((d) => {
+          const pieData = d.slices.map((s) => ({ name: s.value, value: s.count }))
+
+          return (
+            <div key={d.column} className="text-center">
+              <h3 className="glow-cyan text-sm font-semibold mb-1">
+                {d.column}
+              </h3>
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    dataKey="value"
+                    nameKey="name"
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={90}
+                    paddingAngle={2}
+                  >
+                    {pieData.map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[idx % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip {...tooltipStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+/* ------------------------------------------------------------------ */
+/*  Select bar chart                                                   */
+/* ------------------------------------------------------------------ */
+
+function SelectBarChartCard({
+  viz,
+  records,
+}: {
+  viz: Extract<Visualization, { type: 'selectBar' }>
+  records: RecordRow[]
+}) {
+  const data = prepareSelectBarData(records, viz.dateColumn, viz.selectColumn)
+
+  if (data.length === 0) {
+    return (
+      <div className="tech-card rounded-xl p-4 text-muted-foreground text-sm">
+        Not enough data to chart
+      </div>
+    )
+  }
+
+  // Collect all unique values to create bars
+  const uniqueValues = new Set<string>()
+  for (const row of data) {
+    for (const key of Object.keys(row)) {
+      if (key !== 'date') uniqueValues.add(key)
+    }
+  }
+  const values = [...uniqueValues]
+
+  return (
+    <div className="tech-card rounded-xl p-4">
+      <h3 className="glow-cyan text-sm font-semibold mb-2">{viz.selectColumn}</h3>
+      <ResponsiveContainer width="100%" height={250}>
+        <BarChart data={data}>
+          <CartesianGrid strokeDasharray="3 3" stroke="rgba(100,150,255,0.1)" />
+          <XAxis
+            dataKey="date"
+            stroke="rgba(100,150,255,0.5)"
+            tick={{ fontSize: 11 }}
+            tickFormatter={formatDateTick}
+          />
+          <YAxis
+            stroke="rgba(100,150,255,0.5)"
+            tick={{ fontSize: 11 }}
+          />
+          <Tooltip {...tooltipStyle} />
+          {values.map((val, idx) => (
+            <Bar
+              key={val}
+              dataKey={val}
+              stackId="select"
+              fill={COLORS[idx % COLORS.length]}
+              name={val}
+            />
+          ))}
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   )
 }
