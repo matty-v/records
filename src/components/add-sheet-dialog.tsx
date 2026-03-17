@@ -24,6 +24,7 @@ export interface ColumnDraft {
   name: string
   type: ColumnType
   autoPopulate?: 'currentDate'
+  options?: string
 }
 
 interface AddSheetDialogProps {
@@ -106,35 +107,45 @@ export function AddSheetDialog({ open, onOpenChange, onSubmit, isSubmitting }: A
           <div className="space-y-2">
             <Label>Columns</Label>
             {columns.map((col, index) => (
-              <div key={index} className="flex gap-2 items-center">
-                <Input
-                  value={col.name}
-                  onChange={(e) => updateColumn(index, 'name', e.target.value)}
-                  placeholder="Column name"
-                  className="flex-1"
-                />
-                <Select
-                  value={col.type}
-                  onValueChange={(v) => updateColumn(index, 'type', v)}
-                >
-                  <SelectTrigger className="w-28">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {COLUMN_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {columns.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeColumn(index)}
+              <div key={index} className="space-y-2">
+                <div className="flex gap-2 items-center">
+                  <Input
+                    value={col.name}
+                    onChange={(e) => updateColumn(index, 'name', e.target.value)}
+                    placeholder="Column name"
+                    className="flex-1"
+                  />
+                  <Select
+                    value={col.type}
+                    onValueChange={(v) => updateColumn(index, 'type', v)}
                   >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                    <SelectTrigger className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {COLUMN_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {columns.length > 1 && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => removeColumn(index)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                {col.type === 'select' && (
+                  <Input
+                    value={col.options || ''}
+                    onChange={(e) => updateColumn(index, 'options', e.target.value)}
+                    placeholder="Options (comma-separated, e.g. Red,Green,Blue)"
+                    className="ml-0 text-xs"
+                  />
                 )}
               </div>
             ))}
