@@ -44,6 +44,21 @@ describe('parseConfigRows', () => {
     ]
     expect(parseConfigRows(rows)[0].autoPopulate).toBeUndefined()
   })
+
+  it('includes options when present', () => {
+    const rows = [
+      { sheetName: 'Tasks', columnName: 'status', columnType: 'select', columnOrder: '1', options: 'Open,In Progress,Done' },
+    ]
+    const result = parseConfigRows(rows)
+    expect(result[0].options).toBe('Open,In Progress,Done')
+  })
+
+  it('omits options when not present', () => {
+    const rows = [
+      { sheetName: 'Tasks', columnName: 'title', columnType: 'text', columnOrder: '1' },
+    ]
+    expect(parseConfigRows(rows)[0].options).toBeUndefined()
+  })
 })
 
 describe('groupBySheet', () => {
@@ -91,5 +106,26 @@ describe('serializeConfigRow', () => {
       autoPopulate: 'currentDate',
     }
     expect(serializeConfigRow(col).autoPopulate).toBe('currentDate')
+  })
+
+  it('includes options when present', () => {
+    const col: ColumnDefinition = {
+      sheetName: 'Tasks',
+      columnName: 'status',
+      columnType: 'select',
+      columnOrder: 1,
+      options: 'Open,In Progress,Done',
+    }
+    expect(serializeConfigRow(col).options).toBe('Open,In Progress,Done')
+  })
+
+  it('omits options when not present', () => {
+    const col: ColumnDefinition = {
+      sheetName: 'Tasks',
+      columnName: 'title',
+      columnType: 'text',
+      columnOrder: 1,
+    }
+    expect(serializeConfigRow(col).options).toBeUndefined()
   })
 })
