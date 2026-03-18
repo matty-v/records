@@ -136,21 +136,38 @@ export function HomePage() {
         await client.deleteRow(sheetName, rowIndex)
 
         // Ensure _config sheet has the needed header columns
+        // API only creates headers on empty sheets, so we must
+        // recreate _config if new columns are needed
         const needsAutoPopulate = columns.some((c) => c.autoPopulate)
         const needsOptions = columns.some((c) => c.options)
         if (needsAutoPopulate || needsOptions) {
-          const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
-          const missingHeaders: Record<string, string> = {}
-          if (needsAutoPopulate && (configRows.length === 0 || !('autoPopulate' in configRows[0]))) {
-            missingHeaders.autoPopulate = ''
+          const configHeaders = await client.getSchema(CONFIG_SHEET_NAME)
+          const missingHeaders: string[] = []
+          if (needsAutoPopulate && !configHeaders.includes('autoPopulate')) {
+            missingHeaders.push('autoPopulate')
           }
-          if (needsOptions && (configRows.length === 0 || !('options' in configRows[0]))) {
-            missingHeaders.options = ''
+          if (needsOptions && !configHeaders.includes('options')) {
+            missingHeaders.push('options')
           }
-          if (Object.keys(missingHeaders).length > 0) {
-            const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', ...missingHeaders }
-            const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
+          if (missingHeaders.length > 0) {
+            const existingRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
+            await client.deleteSheet(CONFIG_SHEET_NAME)
+            await client.createSheet(CONFIG_SHEET_NAME)
+
+            // Create placeholder row with all columns to establish headers
+            const allHeaders: Record<string, string> = {
+              sheetName: '', columnName: '', columnType: '', columnOrder: '',
+            }
+            for (const h of missingHeaders) { allHeaders[h] = '' }
+            // Include any existing headers too
+            for (const h of configHeaders) { allHeaders[h] = '' }
+            const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, allHeaders)
             await client.deleteRow(CONFIG_SHEET_NAME, phIdx)
+
+            // Re-insert existing config data
+            if (existingRows.length > 0) {
+              await client.bulkCreateRows(CONFIG_SHEET_NAME, existingRows)
+            }
           }
         }
 
@@ -192,17 +209,6 @@ export function HomePage() {
 
         // Get existing _config rows for this sheet
         const configRows = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
-
-        // Ensure _config sheet has the options header column
-        if (columns.some((c) => c.options) && (configRows.length === 0 || !('options' in configRows[0]))) {
-          const placeholder = { sheetName: '', columnName: '', columnType: '', columnOrder: '', options: '' }
-          const { rowIndex: phIdx } = await client.createRow(CONFIG_SHEET_NAME, placeholder)
-          await client.deleteRow(CONFIG_SHEET_NAME, phIdx)
-          // Re-fetch configRows since indices shifted
-          const refreshed = await client.getRows<Record<string, string>>(CONFIG_SHEET_NAME)
-          configRows.length = 0
-          configRows.push(...refreshed)
-        }
 
         const sheetConfigRows = configRows
           .map((row, idx) => ({ row, rowIndex: idx + 2 }))
